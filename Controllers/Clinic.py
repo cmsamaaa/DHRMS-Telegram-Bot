@@ -237,8 +237,7 @@ FIND_CLINICS_CONV_HANDLER: ConversationHandler[CallbackContext] = ConversationHa
         FindClinicsNearbyState.CLINIC_DETAILS: [
             MessageHandler(filters.Regex('^⬅️Back$') & ~filters.COMMAND, start)
         ],
-        FindClinicsNearbyState.END: [MessageHandler(filters.TEXT & ~filters.COMMAND, end)],
-        FindClinicsNearbyState.CANCEL: [MessageHandler(filters.TEXT & ~filters.COMMAND, end)]
+        FindClinicsNearbyState.END: [MessageHandler(filters.TEXT & ~filters.COMMAND, end)]
     },
     fallbacks=[
         CallbackQueryHandler(start, pattern=f"^{FindClinicsNearbyState.START}$"),
