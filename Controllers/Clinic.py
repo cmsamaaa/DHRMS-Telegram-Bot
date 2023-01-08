@@ -16,7 +16,7 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     MessageHandler,
-    filters
+    filters, CommandHandler
 )
 
 logging.basicConfig(
@@ -44,7 +44,6 @@ class FindClinicsNearbyState:
     LIST_RESULTS = 2
     CLINIC_DETAILS = 3
     END = 4
-    CANCEL = 5
 
 
 """ START OF SUPPORT METHODS
@@ -207,26 +206,6 @@ async def end(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if query is not None:
         await query.answer()
 
-    logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | Ended [{PROCESS_NAME}] process.")
-
-    # await query.delete_message()
-    # if obj_id is not None:
-    #     await context.bot.send_message(update.effective_chat.id, "End State Called", None)
-    # else:
-    #     await context.bot.send_message(update.effective_chat.id,
-    #                                    "Failed to list your product. Please contact an Administrator for assistance!",
-    #                                    None)
-
-    await context.bot.send_message(update.effective_chat.id, "End State Called", None)
-    await clear_state(update.effective_chat.id)
-    return STATES.END
-
-
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    query = update.callback_query
-    if query is not None:
-        await query.answer()
-
     logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | Cancelled [{PROCESS_NAME}] process.")
 
     await helpers.handle_message(update,
@@ -250,7 +229,7 @@ FIND_CLINICS_CONV_HANDLER: ConversationHandler[CallbackContext] = ConversationHa
         FindClinicsNearbyState.CHOOSING: [
             MessageHandler(filters.Regex('^[0-9]{6}$') & ~filters.COMMAND, list_results),
             MessageHandler(filters.Regex('^List All Clinics$') & ~filters.COMMAND, list_results),
-            MessageHandler(filters.Regex('^❌ Close$') & ~filters.COMMAND, cancel)
+            MessageHandler(filters.Regex('^❌ Close$') & ~filters.COMMAND, end)
         ],
         FindClinicsNearbyState.LIST_RESULTS: [
             MessageHandler(filters.Regex('^[0-9]+[.][ ][ A-Za-z0-9_@.\/#&()*+-]+$') & ~filters.COMMAND, clinic_details)
@@ -259,12 +238,12 @@ FIND_CLINICS_CONV_HANDLER: ConversationHandler[CallbackContext] = ConversationHa
             MessageHandler(filters.Regex('^⬅️Back$') & ~filters.COMMAND, start)
         ],
         FindClinicsNearbyState.END: [MessageHandler(filters.TEXT & ~filters.COMMAND, end)],
-        FindClinicsNearbyState.CANCEL: [MessageHandler(filters.TEXT & ~filters.COMMAND, cancel)]
+        FindClinicsNearbyState.CANCEL: [MessageHandler(filters.TEXT & ~filters.COMMAND, end)]
     },
     fallbacks=[
         CallbackQueryHandler(start, pattern=f"^{FindClinicsNearbyState.START}$"),
         CallbackQueryHandler(end, pattern=f"^{FindClinicsNearbyState.END}$"),
-        CallbackQueryHandler(cancel, pattern=f"^{FindClinicsNearbyState.CANCEL}$"),
+        CommandHandler("stop", end)
     ],
     map_to_parent={
         STATES.END: ConversationHandler.END
