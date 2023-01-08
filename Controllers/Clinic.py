@@ -83,7 +83,8 @@ async def set_keyboard(curr_state: int, prev_state: int) -> list[list[InlineKeyb
             ]
         case FindClinicsNearbyState.CLINIC_DETAILS:
             return [
-                ["⬅️Back"]
+                # ["⬅️Back"]
+                [InlineKeyboardButton("⬅️Back", callback_data=str(FindClinicsNearbyState.START))]
             ]
 
 
@@ -120,7 +121,7 @@ async def list_results(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
     logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | [{PROCESS_NAME}] State: List Results")
 
-    clinic_list = []
+    clinic_list = [['⬅️Back']]
     if update.message is not None:
         uri = 'https://happy-smile-dhrms.herokuapp.com/api/clinic/get/all/'
         if update.message.text != 'List All Clinics':
@@ -146,18 +147,16 @@ async def clinic_details(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | [{PROCESS_NAME}] State: Clinic Details")
 
     prev_state = await get_state(update.effective_chat.id)
-    keyboard = ReplyKeyboardMarkup(await set_keyboard(FindClinicsNearbyState.CLINIC_DETAILS, prev_state),
-                                   one_time_keyboard=True)
+    keyboard = await set_keyboard(FindClinicsNearbyState.CLINIC_DETAILS, prev_state)
 
     clinic_info_msg = ""
     if update.message is not None:
         uri = f"https://happy-smile-dhrms.herokuapp.com/api/clinic/get/{update.message.text.split('.')[0]}"
         result = requests.get(uri)
         clinic_dict = result.json()
-        clinic_info_msg = "*" + clinic_dict.get('clinicName').replace('.', '\.').replace('-', '\-') + "*"
+        clinic_info_msg = "*" + clinic_dict.get('clinicName').replace('.', '\.').replace('-', '\-').replace('(', '\(').replace(')', '\)') + "*"
         clinic_info_msg += f"\n\n*Clinic ID:* {clinic_dict.get('clinicId')}"
-        clinic_info_msg += "\n*Clinic Address:* " + clinic_dict.get('clinicAddress').replace('.', '\.').replace('-',
-                                                                                                                '\-')
+        clinic_info_msg += "\n*Clinic Address:* " + clinic_dict.get('clinicAddress').replace('.', '\.').replace('-', '\-').replace('(', '\(').replace(')', '\)')
         clinic_info_msg += "\n*Unit No\.:* \#" + clinic_dict.get('clinicUnit').replace('-', '\-')
         clinic_info_msg += f"\n*Postal:* {clinic_dict.get('clinicPostal')}"
         clinic_info_msg += "\n*Email:* " + clinic_dict.get('clinicEmail').replace('.', '\.').replace('_', '\_')
@@ -173,7 +172,7 @@ async def clinic_details(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             clinic_info_msg += "\n*Secondary Phone:* N/A"
 
     await store_state(update.effective_chat.id, FindClinicsNearbyState.CLINIC_DETAILS)
-    await helpers.handle_message(update, clinic_info_msg, keyboard)
+    await helpers.handle_message(update, clinic_info_msg, InlineKeyboardMarkup(keyboard))
 
     return FindClinicsNearbyState.CLINIC_DETAILS
 
@@ -185,7 +184,7 @@ async def back_to_list_results(update: Update, context: ContextTypes.DEFAULT_TYP
 
     logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | [{PROCESS_NAME}] State: Back to List Results")
 
-    clinic_list = []
+    clinic_list = [['⬅️Back']]
     if update.message is not None:
         uri = 'https://happy-smile-dhrms.herokuapp.com/api/clinic/get/all/'
 
@@ -232,10 +231,11 @@ FIND_CLINICS_CONV_HANDLER: ConversationHandler[CallbackContext] = ConversationHa
             MessageHandler(filters.Regex('^❌ Close$') & ~filters.COMMAND, end)
         ],
         FindClinicsNearbyState.LIST_RESULTS: [
-            MessageHandler(filters.Regex('^[0-9]+[.][ ][ A-Za-z0-9_@.\/#&()*+-]+$') & ~filters.COMMAND, clinic_details)
+            MessageHandler(filters.Regex('^⬅️Back$') & ~filters.COMMAND, start),
+            MessageHandler(filters.Regex('^[0-9]+[.][ ][ A-Za-z0-9_@.\/#&():*+-]+$') & ~filters.COMMAND, clinic_details)
         ],
         FindClinicsNearbyState.CLINIC_DETAILS: [
-            MessageHandler(filters.Regex('^⬅️Back$') & ~filters.COMMAND, start)
+            CallbackQueryHandler(start, pattern=f"^{FindClinicsNearbyState.START}$"),
         ],
         FindClinicsNearbyState.END: [MessageHandler(filters.TEXT & ~filters.COMMAND, end)]
     },
