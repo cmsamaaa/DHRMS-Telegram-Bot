@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 # Essential Info
 TELEGRAM_BOT_API_TOKEN = constants.TELEGRAM_BOT_API_TOKEN
 BOT_NAME = constants.BOT_NAME
+WEBSITE = constants.WEBSITE
 STATES = constants.States
 
 
@@ -40,7 +41,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
         [InlineKeyboardButton("Show Debugger", callback_data="data")]
     ]
 
-    await helpers.handle_message(update, f"*Hello {update.effective_user.first_name}\!* \n\nWelcome to {BOT_NAME}\! \n\nWhat do you want to do?",
+    await helpers.handle_message(update,
+                                 f"*Hello {update.effective_user.first_name}\!* \n\nWelcome to {BOT_NAME}\! \n\nWhat do you want to do?",
                                  InlineKeyboardMarkup(keyboard))
 
     return STATES.SELECTING_ACTION
@@ -86,7 +88,12 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     logger.info(f"User [{update.effective_user.first_name}] | Terminated the bot.")
 
-    await context.bot.send_message(update.effective_chat.id, "Have a nice day!", None)
+    await context.bot.send_message(update.effective_chat.id,
+                                   "Alright, I'll see you again soon! " +
+                                   "\n\nFor more information, please visit our website at " +
+                                   WEBSITE + "." +
+                                   "\n\nPress start on the menu or type /start to start the bot again.",
+                                   None)
 
     return STATES.END
 
