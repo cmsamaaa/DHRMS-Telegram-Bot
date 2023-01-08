@@ -97,23 +97,6 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     return STATES.END
 
-
-# Conversation Handler for [FIND CLINICS NEARBY]
-# FIND_CLINICS_NEARBY_CONV_HANDLER: ConversationHandler[CallbackContext] = ConversationHandler(
-#     entry_points=[CallbackQueryHandler(Account.start, pattern=f"^{STATES.FIND_CLINICS_NEARBY}$")],
-#     states={
-#         STATES.SELECTING_LEVEL: [
-#             Clinic.LINK_ACCOUNT_CONV_HANDLER,
-#             CallbackQueryHandler(back_to_start, pattern=f"^{STATES.BACK_TO_PARENT}$")
-#         ]
-#     },
-#     fallbacks=[CommandHandler("stop", stop)],
-#     map_to_parent={
-#         STATES.BACK_TO_PARENT: STATES.SELECTING_ACTION,
-#         STATES.END: ConversationHandler.END
-#     }
-# )
-
 # Conversation Handler for [START]
 CONV_HANDLER: ConversationHandler[CallbackContext] = ConversationHandler(
     entry_points=[CommandHandler("start", start)],
