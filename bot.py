@@ -82,12 +82,12 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     logger.info(f"User [{update.effective_user.first_name}] | Terminated the bot.")
 
-    await context.bot.send_message(update.effective_chat.id,
-                                   "Alright, I'll see you again soon! " +
-                                   "\n\nFor more information, please visit our website at " +
-                                   WEBSITE + "." +
-                                   "\n\nPress start on the menu or type /start to start the bot again.",
-                                   ReplyKeyboardRemove())
+    await helpers.handle_message(update,
+                                 "Alright, I'll see you again soon\! " +
+                                 "\n\nFor more information, please visit our website at " +
+                                 WEBSITE.replace('.', '\.').replace('-', '\-') + "\." +
+                                 "\n\nPress start on the menu or type \/start to start the bot again\.",
+                                 ReplyKeyboardRemove())
 
     return STATES.END
 
