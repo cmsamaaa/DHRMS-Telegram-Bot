@@ -8,7 +8,9 @@ import Models.Clinic as Clinic
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    Update, ReplyKeyboardMarkup
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+    Update
 )
 from telegram.ext import (
     CallbackContext,
@@ -212,7 +214,7 @@ async def end(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
                                  "\n\nFor more information, please visit our website at " +
                                  WEBSITE.replace('.', '\.').replace('-', '\-') + "\." +
                                  "\n\nPress start on the menu or type \/start to start the bot again\.",
-                                 None)
+                                 ReplyKeyboardRemove())
 
     await clear_state(update.effective_chat.id)
     return STATES.END

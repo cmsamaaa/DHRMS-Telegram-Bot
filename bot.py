@@ -8,6 +8,7 @@ import Controllers.Clinic as Clinic
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    ReplyKeyboardRemove,
     Update
 )
 from telegram.ext import (
@@ -73,13 +74,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     return STATES.END
 
 
-# Completely end conversation from within nested conversation.
-async def stop_nested(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    await update.message.reply_text("Let us know how we can improve!")
-
-    return STATES.END
-
-
 # End Conversation
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
@@ -93,7 +87,7 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
                                    "\n\nFor more information, please visit our website at " +
                                    WEBSITE + "." +
                                    "\n\nPress start on the menu or type /start to start the bot again.",
-                                   None)
+                                   ReplyKeyboardRemove())
 
     return STATES.END
 
