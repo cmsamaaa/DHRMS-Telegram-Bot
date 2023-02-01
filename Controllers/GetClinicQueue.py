@@ -41,7 +41,7 @@ state_dict: dict[int, int] = {}
 
 
 # Callback data
-class GetClinicQueueNearbyState:
+class GetClinicQueueState:
     START = 0
     CHOOSING = 1
     LIST_RESULTS = 2
@@ -79,15 +79,15 @@ async def clear_state(chat_id: int) -> bool:
 # Set keyboard
 async def set_keyboard(curr_state: int, prev_state: int) -> list[list[InlineKeyboardButton]] | list[list[str]]:
     match curr_state:
-        case GetClinicQueueNearbyState.START:
+        case GetClinicQueueState.START:
             return [
                 ["List All Clinics"],
                 ["❌ Close"]
             ]
-        case GetClinicQueueNearbyState.CLINIC_DETAILS:
+        case GetClinicQueueState.CLINIC_DETAILS:
             return [
                 # ["⬅️Back"]
-                [InlineKeyboardButton("⬅️Back", callback_data=str(GetClinicQueueNearbyState.START))]
+                [InlineKeyboardButton("⬅️Back", callback_data=str(GetClinicQueueState.START))]
             ]
 
 
@@ -109,12 +109,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | [{PROCESS_NAME}] State: Start")
 
     prev_state = await get_state(update.effective_chat.id)
-    keyboard = ReplyKeyboardMarkup(await set_keyboard(GetClinicQueueNearbyState.START, prev_state), one_time_keyboard=True)
+    keyboard = ReplyKeyboardMarkup(await set_keyboard(GetClinicQueueState.START, prev_state), one_time_keyboard=True)
 
-    await store_state(update.effective_chat.id, GetClinicQueueNearbyState.START)
+    await store_state(update.effective_chat.id, GetClinicQueueState.START)
     await helpers.handle_message(update, "Pick an option:", keyboard)
 
-    return GetClinicQueueNearbyState.CHOOSING
+    return GetClinicQueueState.CHOOSING
 
 
 async def list_results(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -137,10 +137,10 @@ async def list_results(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
     keyboard = ReplyKeyboardMarkup(clinic_list, one_time_keyboard=True)
 
-    await store_state(update.effective_chat.id, GetClinicQueueNearbyState.LIST_RESULTS)
+    await store_state(update.effective_chat.id, GetClinicQueueState.LIST_RESULTS)
     await helpers.handle_message(update, "Select a clinic to view its current queue status:", keyboard)
 
-    return GetClinicQueueNearbyState.LIST_RESULTS
+    return GetClinicQueueState.LIST_RESULTS
 
 
 async def clinic_details(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -151,7 +151,7 @@ async def clinic_details(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | [{PROCESS_NAME}] State: View Clinic Queue Status")
 
     prev_state = await get_state(update.effective_chat.id)
-    keyboard = await set_keyboard(GetClinicQueueNearbyState.CLINIC_DETAILS, prev_state)
+    keyboard = await set_keyboard(GetClinicQueueState.CLINIC_DETAILS, prev_state)
 
     queue_info_msg = ""
     if update.message is not None:
@@ -180,10 +180,10 @@ async def clinic_details(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     queue_info_msg += f"\n\n_Note: This message is generated at {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\. Please go back and select the clinic again to get the latest queue status\._"
 
-    await store_state(update.effective_chat.id, GetClinicQueueNearbyState.CLINIC_DETAILS)
+    await store_state(update.effective_chat.id, GetClinicQueueState.CLINIC_DETAILS)
     await helpers.handle_message(update, queue_info_msg, InlineKeyboardMarkup(keyboard))
 
-    return GetClinicQueueNearbyState.CLINIC_DETAILS
+    return GetClinicQueueState.CLINIC_DETAILS
 
 
 async def back_to_list_results(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -203,10 +203,10 @@ async def back_to_list_results(update: Update, context: ContextTypes.DEFAULT_TYP
 
     keyboard = ReplyKeyboardMarkup(clinic_list, one_time_keyboard=True)
 
-    await store_state(update.effective_chat.id, GetClinicQueueNearbyState.LIST_RESULTS)
+    await store_state(update.effective_chat.id, GetClinicQueueState.LIST_RESULTS)
     await helpers.handle_message(update, "Select a clinic to view its current queue status:", keyboard)
 
-    return GetClinicQueueNearbyState.LIST_RESULTS
+    return GetClinicQueueState.LIST_RESULTS
 
 
 async def end(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -233,24 +233,24 @@ GET_CLINIC_QUEUE_CONV_HANDLER: ConversationHandler[CallbackContext] = Conversati
         CallbackQueryHandler(start, pattern=f"^{STATES.GET_CLINIC_QUEUE}$")
     ],
     states={
-        GetClinicQueueNearbyState.START: [MessageHandler(filters.TEXT & ~filters.COMMAND, start)],
-        GetClinicQueueNearbyState.CHOOSING: [
+        GetClinicQueueState.START: [MessageHandler(filters.TEXT & ~filters.COMMAND, start)],
+        GetClinicQueueState.CHOOSING: [
             # MessageHandler(filters.Regex('^[0-9]{6}$') & ~filters.COMMAND, list_results),
             MessageHandler(filters.Regex('^List All Clinics$') & ~filters.COMMAND, list_results),
             MessageHandler(filters.Regex('^❌ Close$') & ~filters.COMMAND, end)
         ],
-        GetClinicQueueNearbyState.LIST_RESULTS: [
+        GetClinicQueueState.LIST_RESULTS: [
             MessageHandler(filters.Regex('^⬅️Back$') & ~filters.COMMAND, start),
             MessageHandler(filters.Regex('^[0-9]+[.][ ][ A-Za-z0-9_@.\/#&():*+-]+$') & ~filters.COMMAND, clinic_details)
         ],
-        GetClinicQueueNearbyState.CLINIC_DETAILS: [
-            CallbackQueryHandler(start, pattern=f"^{GetClinicQueueNearbyState.START}$"),
+        GetClinicQueueState.CLINIC_DETAILS: [
+            CallbackQueryHandler(start, pattern=f"^{GetClinicQueueState.START}$"),
         ],
-        GetClinicQueueNearbyState.END: [MessageHandler(filters.TEXT & ~filters.COMMAND, end)]
+        GetClinicQueueState.END: [MessageHandler(filters.TEXT & ~filters.COMMAND, end)]
     },
     fallbacks=[
-        CallbackQueryHandler(start, pattern=f"^{GetClinicQueueNearbyState.START}$"),
-        CallbackQueryHandler(end, pattern=f"^{GetClinicQueueNearbyState.END}$"),
+        CallbackQueryHandler(start, pattern=f"^{GetClinicQueueState.START}$"),
+        CallbackQueryHandler(end, pattern=f"^{GetClinicQueueState.END}$"),
         CommandHandler("stop", end)
     ],
     map_to_parent={
