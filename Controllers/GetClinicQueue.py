@@ -186,29 +186,6 @@ async def clinic_details(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     return GetClinicQueueState.CLINIC_DETAILS
 
 
-async def back_to_list_results(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    query = update.callback_query
-    if query is not None:
-        await query.answer()
-
-    logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | [{PROCESS_NAME}] State: Back to List Results")
-
-    clinic_list = [['⬅️Back']]
-    if update.message is not None:
-        uri = 'https://happy-smile-dhrms.herokuapp.com/api/clinic/get/all/'
-
-        result = requests.get(uri)
-        for clinic in result.json():
-            clinic_list.append([f"{clinic.get('clinicId')}. {clinic.get('clinicName')}"])
-
-    keyboard = ReplyKeyboardMarkup(clinic_list, one_time_keyboard=True)
-
-    await store_state(update.effective_chat.id, GetClinicQueueState.LIST_RESULTS)
-    await helpers.handle_message(update, "Select a clinic to view its current queue status:", keyboard)
-
-    return GetClinicQueueState.LIST_RESULTS
-
-
 async def end(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     if query is not None:
@@ -235,7 +212,6 @@ GET_CLINIC_QUEUE_CONV_HANDLER: ConversationHandler[CallbackContext] = Conversati
     states={
         GetClinicQueueState.START: [MessageHandler(filters.TEXT & ~filters.COMMAND, start)],
         GetClinicQueueState.CHOOSING: [
-            # MessageHandler(filters.Regex('^[0-9]{6}$') & ~filters.COMMAND, list_results),
             MessageHandler(filters.Regex('^List All Clinics$') & ~filters.COMMAND, list_results),
             MessageHandler(filters.Regex('^❌ Close$') & ~filters.COMMAND, end)
         ],
