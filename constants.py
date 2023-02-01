@@ -23,6 +23,7 @@ WEBSITE: str = "https://happy-smile-dhrms.herokuapp.com/"
 TIMEZONE: pytz = pytz.timezone('Asia/Singapore')
 
 # Process Names
+GET_APPOINTMENTS: str = "GET APPOINTMENTS"
 FIND_CLINICS_NEARBY: str = "FIND CLINICS NEARBY"
 GET_CLINIC_QUEUE: str = "GET CLINIC QUEUE"
 VIEW_FAQ: str = "VIEW FAQ"
@@ -35,7 +36,7 @@ REPLY_MARKUP = Union[
 
 class States:
     # State definitions for top level conversation
-    SELECTING_ACTION, FIND_CLINICS_NEARBY, GET_CLINIC_QUEUE, VIEW_FAQ, CREATE_PRODUCT = range(5)
+    SELECTING_ACTION, GET_APPOINTMENTS, FIND_CLINICS_NEARBY, GET_CLINIC_QUEUE, VIEW_FAQ, CREATE_PRODUCT = range(6)
     # State definitions for second level conversation
     # SELECTING_LEVEL, SELECTING_GENDER = range(3, 5)
     # State definitions for descriptions conversation

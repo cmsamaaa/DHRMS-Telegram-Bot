@@ -4,6 +4,7 @@ import constants
 import helpers
 
 import Controllers.FindClinic as FindClinic
+import Controllers.GetAppointments as GetAppointments
 import Controllers.GetClinicQueue as GetClinicQueue
 import Controllers.ViewFAQ as ViewFAQ
 
@@ -40,6 +41,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
         await query.answer()
 
     keyboard = [
+        [InlineKeyboardButton("Check Upcoming Appointments", callback_data=str(STATES.GET_APPOINTMENTS))],
         [InlineKeyboardButton("Find a clinic", callback_data=str(STATES.FIND_CLINICS_NEARBY))],
         [InlineKeyboardButton("Check Queue @ Clinic", callback_data=str(STATES.GET_CLINIC_QUEUE))],
         [InlineKeyboardButton("View FAQ", callback_data=str(STATES.VIEW_FAQ))],
@@ -100,6 +102,7 @@ CONV_HANDLER: ConversationHandler[CallbackContext] = ConversationHandler(
     entry_points=[CommandHandler("start", start)],
     states={
         STATES.SELECTING_ACTION: [
+            GetAppointments.GET_APPOINTMENTS_CONV_HANDLER,
             FindClinic.FIND_CLINICS_CONV_HANDLER,
             GetClinicQueue.GET_CLINIC_QUEUE_CONV_HANDLER,
             ViewFAQ.VIEW_FAQ_CONV_HANDLER,

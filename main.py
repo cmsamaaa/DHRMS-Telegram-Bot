@@ -28,7 +28,7 @@ def main() -> None:
     application.add_handler(bot.CONV_HANDLER)
 
     # Run the bot until the user presses Ctrl-C
-    application.run_polling()
+    application.run_polling(timeout=1000)
 
 
 if __name__ == "__main__":
