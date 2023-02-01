@@ -25,7 +25,7 @@ TIMEZONE: pytz = pytz.timezone('Asia/Singapore')
 # Process Names
 FIND_CLINICS_NEARBY: str = "FIND CLINICS NEARBY"
 GET_CLINIC_QUEUE: str = "GET CLINIC QUEUE"
-# PRODUCT_CREATION: str = "PRODUCT CREATION"
+VIEW_FAQ: str = "VIEW FAQ"
 
 # Custom Datatypes
 REPLY_MARKUP = Union[
@@ -35,11 +35,11 @@ REPLY_MARKUP = Union[
 
 class States:
     # State definitions for top level conversation
-    SELECTING_ACTION, FIND_CLINICS_NEARBY, GET_CLINIC_QUEUE, CREATE_PRODUCT = range(4)
+    SELECTING_ACTION, FIND_CLINICS_NEARBY, GET_CLINIC_QUEUE, VIEW_FAQ, CREATE_PRODUCT = range(5)
     # State definitions for second level conversation
-    SELECTING_LEVEL, SELECTING_GENDER = range(3, 5)
+    # SELECTING_LEVEL, SELECTING_GENDER = range(3, 5)
     # State definitions for descriptions conversation
-    LINK_ACCOUNT, TYPING = range(5, 7)
+    # LINK_ACCOUNT, TYPING = range(5, 7)
     # Meta states
     BACK_TO_PARENT, SHOWING = range(7, 9)
     # Shortcut for ConversationHandler.END
