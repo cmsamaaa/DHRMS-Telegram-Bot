@@ -36,7 +36,7 @@ REPLY_MARKUP = Union[
 
 class States:
     # State definitions for top level conversation
-    SELECTING_ACTION, GET_APPOINTMENTS, FIND_CLINICS_NEARBY, GET_CLINIC_QUEUE, VIEW_FAQ, CREATE_PRODUCT = range(6)
+    SELECTING_ACTION, GET_APPOINTMENTS, GET_CLINIC_QUEUE, FIND_CLINICS_NEARBY, VIEW_FAQ, CREATE_PRODUCT = range(6)
     # State definitions for second level conversation
     # SELECTING_LEVEL, SELECTING_GENDER = range(3, 5)
     # State definitions for descriptions conversation

@@ -42,10 +42,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
 
     keyboard = [
         [InlineKeyboardButton("Check Upcoming Appointments", callback_data=str(STATES.GET_APPOINTMENTS))],
-        [InlineKeyboardButton("Find a clinic", callback_data=str(STATES.FIND_CLINICS_NEARBY))],
         [InlineKeyboardButton("Check Queue @ Clinic", callback_data=str(STATES.GET_CLINIC_QUEUE))],
-        [InlineKeyboardButton("View FAQ", callback_data=str(STATES.VIEW_FAQ))],
-        [InlineKeyboardButton("Show Debugger", callback_data="data")]
+        [InlineKeyboardButton("Find a Clinic", callback_data=str(STATES.FIND_CLINICS_NEARBY))],
+        [InlineKeyboardButton("View FAQ", callback_data=str(STATES.VIEW_FAQ))]
     ]
 
     await helpers.handle_message(update,
@@ -103,8 +102,8 @@ CONV_HANDLER: ConversationHandler[CallbackContext] = ConversationHandler(
     states={
         STATES.SELECTING_ACTION: [
             GetAppointments.GET_APPOINTMENTS_CONV_HANDLER,
-            FindClinic.FIND_CLINICS_CONV_HANDLER,
             GetClinicQueue.GET_CLINIC_QUEUE_CONV_HANDLER,
+            FindClinic.FIND_CLINICS_CONV_HANDLER,
             ViewFAQ.VIEW_FAQ_CONV_HANDLER,
             CallbackQueryHandler(button)
         ]
