@@ -3,7 +3,8 @@ import requests
 
 import constants
 import helpers
-import Models.Clinic as Clinic
+
+from datetime import datetime
 
 from telegram import (
     InlineKeyboardButton,
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 TELEGRAM_BOT_API_TOKEN = constants.TELEGRAM_BOT_API_TOKEN
 BOT_NAME = constants.BOT_NAME
 WEBSITE = constants.WEBSITE
-PROCESS_NAME = constants.FIND_CLINICS_NEARBY
+PROCESS_NAME = constants.GET_CLINIC_QUEUE
 STATES = constants.States
 
 # Initialise Session Dictionaries
@@ -40,7 +41,7 @@ state_dict: dict[int, int] = {}
 
 
 # Callback data
-class FindClinicsNearbyState:
+class GetClinicQueueNearbyState:
     START = 0
     CHOOSING = 1
     LIST_RESULTS = 2
@@ -78,15 +79,15 @@ async def clear_state(chat_id: int) -> bool:
 # Set keyboard
 async def set_keyboard(curr_state: int, prev_state: int) -> list[list[InlineKeyboardButton]] | list[list[str]]:
     match curr_state:
-        case FindClinicsNearbyState.START:
+        case GetClinicQueueNearbyState.START:
             return [
                 ["List All Clinics"],
                 ["❌ Close"]
             ]
-        case FindClinicsNearbyState.CLINIC_DETAILS:
+        case GetClinicQueueNearbyState.CLINIC_DETAILS:
             return [
                 # ["⬅️Back"]
-                [InlineKeyboardButton("⬅️Back", callback_data=str(FindClinicsNearbyState.START))]
+                [InlineKeyboardButton("⬅️Back", callback_data=str(GetClinicQueueNearbyState.START))]
             ]
 
 
@@ -108,12 +109,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | [{PROCESS_NAME}] State: Start")
 
     prev_state = await get_state(update.effective_chat.id)
-    keyboard = ReplyKeyboardMarkup(await set_keyboard(FindClinicsNearbyState.START, prev_state), one_time_keyboard=True)
+    keyboard = ReplyKeyboardMarkup(await set_keyboard(GetClinicQueueNearbyState.START, prev_state), one_time_keyboard=True)
 
-    await store_state(update.effective_chat.id, FindClinicsNearbyState.START)
-    await helpers.handle_message(update, "Enter your postal code: \n\n*OR* \n\nPick an option:", keyboard)
+    await store_state(update.effective_chat.id, GetClinicQueueNearbyState.START)
+    await helpers.handle_message(update, "Pick an option:", keyboard)
 
-    return FindClinicsNearbyState.CHOOSING
+    return GetClinicQueueNearbyState.CHOOSING
 
 
 async def list_results(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -121,7 +122,8 @@ async def list_results(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     if query is not None:
         await query.answer()
 
-    logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | [{PROCESS_NAME}] State: List Results")
+    logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | Started [{PROCESS_NAME}] process.")
+    logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | [{PROCESS_NAME}] State: Start")
 
     clinic_list = [['⬅️Back']]
     if update.message is not None:
@@ -135,10 +137,10 @@ async def list_results(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
 
     keyboard = ReplyKeyboardMarkup(clinic_list, one_time_keyboard=True)
 
-    await store_state(update.effective_chat.id, FindClinicsNearbyState.LIST_RESULTS)
-    await helpers.handle_message(update, "Here are the results\! \n\nSelect a clinic to view more details:", keyboard)
+    await store_state(update.effective_chat.id, GetClinicQueueNearbyState.LIST_RESULTS)
+    await helpers.handle_message(update, "Select a clinic to view its current queue status:", keyboard)
 
-    return FindClinicsNearbyState.LIST_RESULTS
+    return GetClinicQueueNearbyState.LIST_RESULTS
 
 
 async def clinic_details(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -146,37 +148,42 @@ async def clinic_details(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     if query is not None:
         await query.answer()
 
-    logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | [{PROCESS_NAME}] State: Clinic Details")
+    logger.info(f"{update.effective_user.first_name} [{update.effective_user.id}] | [{PROCESS_NAME}] State: View Clinic Queue Status")
 
     prev_state = await get_state(update.effective_chat.id)
-    keyboard = await set_keyboard(FindClinicsNearbyState.CLINIC_DETAILS, prev_state)
+    keyboard = await set_keyboard(GetClinicQueueNearbyState.CLINIC_DETAILS, prev_state)
 
-    clinic_info_msg = ""
+    queue_info_msg = ""
     if update.message is not None:
-        uri = f"https://happy-smile-dhrms.herokuapp.com/api/clinic/get/{update.message.text.split('.')[0]}"
+        uri = f"https://happy-smile-dhrms.herokuapp.com/api/queue/get/count/{update.message.text.split('.')[0]}"
         result = requests.get(uri)
-        clinic_dict = result.json()
-        clinic_info_msg = "*" + clinic_dict.get('clinicName').replace('.', '\.').replace('-', '\-').replace('(', '\(').replace(')', '\)') + "*"
-        clinic_info_msg += f"\n\n*Clinic ID:* {clinic_dict.get('clinicId')}"
-        clinic_info_msg += "\n*Clinic Address:* " + clinic_dict.get('clinicAddress').replace('.', '\.').replace('-', '\-').replace('(', '\(').replace(')', '\)')
-        clinic_info_msg += "\n*Unit No\.:* \#" + clinic_dict.get('clinicUnit').replace('-', '\-')
-        clinic_info_msg += f"\n*Postal:* {clinic_dict.get('clinicPostal')}"
-        clinic_info_msg += "\n*Email:* " + clinic_dict.get('clinicEmail').replace('.', '\.').replace('_', '\_')
-        if clinic_dict.get('clinicSubEmail') is not None:
-            clinic_info_msg += "\n*Secondary Email:* " + clinic_dict.get('clinicSubEmail').replace('.', '\.').replace(
-                '_', '\_')
-        else:
-            clinic_info_msg += "\n*Secondary Email:* N/A"
-        clinic_info_msg += f"\n*Phone:* \+65 {clinic_dict.get('clinicPhone')}"
-        if clinic_dict.get('clinicSubEmail') is not None:
-            clinic_info_msg += f"\n*Secondary Phone:* \+65 {clinic_dict.get('clinicSubPhone')}"
-        else:
-            clinic_info_msg += "\n*Secondary Phone:* N/A"
 
-    await store_state(update.effective_chat.id, FindClinicsNearbyState.CLINIC_DETAILS)
-    await helpers.handle_message(update, clinic_info_msg, InlineKeyboardMarkup(keyboard))
+        if result.status_code == 200:
+            queue_dict = result.json()
+            queue_info_msg = "*" + queue_dict.get('clinicName').replace('.', '\.').replace('-', '\-').replace('(', '\(').replace(')', '\)') + "*"
 
-    return FindClinicsNearbyState.CLINIC_DETAILS
+            if queue_dict.get('count') < 5:
+                queue_info_msg += f"\n\n🟢 *SHORT WAITING TIME* 🟢"
+            elif queue_dict.get('count') < 10:
+                queue_info_msg += f"\n\n🟡 *MODERATE WAITING TIME* 🟡"
+            else:
+                queue_info_msg += f"\n\n🔴 *LONG WAITING TIME* 🔴"
+
+            queue_info_msg += f"\n\nCurrently in Queue: *{queue_dict.get('count')}*"
+        else:
+            uri = f"https://happy-smile-dhrms.herokuapp.com/api/clinic/get/{update.message.text.split('.')[0]}"
+            result = requests.get(uri)
+            clinic_dict = result.json()
+            queue_info_msg = "*" + clinic_dict.get('clinicName').replace('.', '\.').replace('-', '\-').replace('(', '\(').replace(')', '\)') + "*"
+            queue_info_msg += f"\n\n🟢 *SHORT WAITING TIME* 🟢"
+            queue_info_msg += f"\n\nCurrently in Queue: *None*"
+
+    queue_info_msg += f"\n\n_Note: This message is generated at {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}\. Please go back and select the clinic again to get the latest queue status\._"
+
+    await store_state(update.effective_chat.id, GetClinicQueueNearbyState.CLINIC_DETAILS)
+    await helpers.handle_message(update, queue_info_msg, InlineKeyboardMarkup(keyboard))
+
+    return GetClinicQueueNearbyState.CLINIC_DETAILS
 
 
 async def back_to_list_results(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -196,10 +203,10 @@ async def back_to_list_results(update: Update, context: ContextTypes.DEFAULT_TYP
 
     keyboard = ReplyKeyboardMarkup(clinic_list, one_time_keyboard=True)
 
-    await store_state(update.effective_chat.id, FindClinicsNearbyState.LIST_RESULTS)
-    await helpers.handle_message(update, "Here are the results\! \n\nSelect a clinic to view more details:", keyboard)
+    await store_state(update.effective_chat.id, GetClinicQueueNearbyState.LIST_RESULTS)
+    await helpers.handle_message(update, "Select a clinic to view its current queue status:", keyboard)
 
-    return FindClinicsNearbyState.LIST_RESULTS
+    return GetClinicQueueNearbyState.LIST_RESULTS
 
 
 async def end(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -221,29 +228,29 @@ async def end(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 # Initialise a conversation handler for [PRODUCT CREATION]
-FIND_CLINICS_CONV_HANDLER: ConversationHandler[CallbackContext] = ConversationHandler(
+GET_CLINIC_QUEUE_CONV_HANDLER: ConversationHandler[CallbackContext] = ConversationHandler(
     entry_points=[
-        CallbackQueryHandler(start, pattern=f"^{STATES.FIND_CLINICS_NEARBY}$")
+        CallbackQueryHandler(start, pattern=f"^{STATES.GET_CLINIC_QUEUE}$")
     ],
     states={
-        FindClinicsNearbyState.START: [MessageHandler(filters.TEXT & ~filters.COMMAND, start)],
-        FindClinicsNearbyState.CHOOSING: [
-            MessageHandler(filters.Regex('^[0-9]{6}$') & ~filters.COMMAND, list_results),
+        GetClinicQueueNearbyState.START: [MessageHandler(filters.TEXT & ~filters.COMMAND, start)],
+        GetClinicQueueNearbyState.CHOOSING: [
+            # MessageHandler(filters.Regex('^[0-9]{6}$') & ~filters.COMMAND, list_results),
             MessageHandler(filters.Regex('^List All Clinics$') & ~filters.COMMAND, list_results),
             MessageHandler(filters.Regex('^❌ Close$') & ~filters.COMMAND, end)
         ],
-        FindClinicsNearbyState.LIST_RESULTS: [
+        GetClinicQueueNearbyState.LIST_RESULTS: [
             MessageHandler(filters.Regex('^⬅️Back$') & ~filters.COMMAND, start),
             MessageHandler(filters.Regex('^[0-9]+[.][ ][ A-Za-z0-9_@.\/#&():*+-]+$') & ~filters.COMMAND, clinic_details)
         ],
-        FindClinicsNearbyState.CLINIC_DETAILS: [
-            CallbackQueryHandler(start, pattern=f"^{FindClinicsNearbyState.START}$"),
+        GetClinicQueueNearbyState.CLINIC_DETAILS: [
+            CallbackQueryHandler(start, pattern=f"^{GetClinicQueueNearbyState.START}$"),
         ],
-        FindClinicsNearbyState.END: [MessageHandler(filters.TEXT & ~filters.COMMAND, end)]
+        GetClinicQueueNearbyState.END: [MessageHandler(filters.TEXT & ~filters.COMMAND, end)]
     },
     fallbacks=[
-        CallbackQueryHandler(start, pattern=f"^{FindClinicsNearbyState.START}$"),
-        CallbackQueryHandler(end, pattern=f"^{FindClinicsNearbyState.END}$"),
+        CallbackQueryHandler(start, pattern=f"^{GetClinicQueueNearbyState.START}$"),
+        CallbackQueryHandler(end, pattern=f"^{GetClinicQueueNearbyState.END}$"),
         CommandHandler("stop", end)
     ],
     map_to_parent={

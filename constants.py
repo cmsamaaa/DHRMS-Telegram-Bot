@@ -24,6 +24,7 @@ TIMEZONE: pytz = pytz.timezone('Asia/Singapore')
 
 # Process Names
 FIND_CLINICS_NEARBY: str = "FIND CLINICS NEARBY"
+GET_CLINIC_QUEUE: str = "GET CLINIC QUEUE"
 # PRODUCT_CREATION: str = "PRODUCT CREATION"
 
 # Custom Datatypes
@@ -34,7 +35,7 @@ REPLY_MARKUP = Union[
 
 class States:
     # State definitions for top level conversation
-    SELECTING_ACTION, FIND_CLINICS_NEARBY, CREATE_PRODUCT = range(3)
+    SELECTING_ACTION, FIND_CLINICS_NEARBY, GET_CLINIC_QUEUE, CREATE_PRODUCT = range(4)
     # State definitions for second level conversation
     SELECTING_LEVEL, SELECTING_GENDER = range(3, 5)
     # State definitions for descriptions conversation

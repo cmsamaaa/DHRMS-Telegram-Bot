@@ -3,7 +3,8 @@ import logging
 import constants
 import helpers
 
-import Controllers.Clinic as Clinic
+import Controllers.FindClinic as FindClinic
+import Controllers.GetClinicQueue as GetClinicQueue
 
 from telegram import (
     InlineKeyboardButton,
@@ -39,6 +40,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
 
     keyboard = [
         [InlineKeyboardButton("Find a clinic", callback_data=str(STATES.FIND_CLINICS_NEARBY))],
+        [InlineKeyboardButton("Check Queue @ Clinic", callback_data=str(STATES.GET_CLINIC_QUEUE))],
         [InlineKeyboardButton("Show Debugger", callback_data="data")]
     ]
 
@@ -96,7 +98,8 @@ CONV_HANDLER: ConversationHandler[CallbackContext] = ConversationHandler(
     entry_points=[CommandHandler("start", start)],
     states={
         STATES.SELECTING_ACTION: [
-            Clinic.FIND_CLINICS_CONV_HANDLER,
+            FindClinic.FIND_CLINICS_CONV_HANDLER,
+            GetClinicQueue.GET_CLINIC_QUEUE_CONV_HANDLER,
             CallbackQueryHandler(button)
         ]
     },
